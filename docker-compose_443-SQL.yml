@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  xibo-xmr:
+    image: ghcr.io/xibosignage/xibo-xmr:0.11
+    ports:
+      - "9505:9505"
+    restart: always
+    mem_limit: 512m
+  xibo-web:
+    image: ghcr.io/xibosignage/xibo-cms:release-4.0.7
+    volumes:
+      - "./shared/cms/custom:/var/www/cms/custom:Z"
+      - "./shared/backup:/var/www/backup:Z"
+      - "./shared/cms/web/theme/custom:/var/www/cms/web/theme/custom:Z"
+      - "./shared/cms/library:/var/www/cms/library:Z"
+      - "./shared/cms/web/userscripts:/var/www/cms/web/userscripts:Z"
+      - "./shared/cms/ca-certs:/var/www/cms/ca-certs:Z"
+    restart: always
+    environment:
+      #### CHANGE THESE SETINGS ####
+      - CMS_SERVER_NAME=xibo.domain.local
+
+      # Memcache
+      - CMS_USE_MEMCACHED=true
+      - MEMCACHED_HOST=xibo-memcached
+      - MEMCACHED_PORT=11211
+
+      - CMS_USAGE_REPORT=false
+      - XMR_HOST=xibo-xmr
+      #- XTR_ENABLED=false
+      - CMS_QUICK_CHART_URL=http://xibo-quickchart:3400
+
+      # PHP Options
+      - CMS_PHP_POST_MAX_SIZE=4G
+      - CMS_PHP_UPLOAD_MAX_FILESIZE=4G
+      - CMS_PHP_MAX_EXECUTION_TIME=600
+      - CMS_PHP_SESSION_GC_MAXLIFETIME=1440 \
+      - CMS_PHP_MEMORY_LIMIT=256M \
+      - CMS_PHP_CLI_MAX_EXECUTION_TIME=0 \
+      - CMS_PHP_CLI_MEMORY_LIMIT=256M \
+      - CMS_PHP_COOKIE_SECURE=Off \
+      - CMS_PHP_COOKIE_HTTP_ONLY=On \
+      - CMS_PHP_COOKIE_SAMESITE=Lax \
+
+      # SQL Server    #### CHANGE THESE SETINGS ####
+      - MYSQL_HOST=sql_server_name
+      - MYSQL_PORT=xxx
+      - MYSQL_DATABASE=xibo_db_name
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+
+      # SMTP          #### CHANGE THESE SETINGS ####
+      - CMS_SMTP_SERVER=smtp.domain.com:587
+      - CMS_SMTP_USERNAME=email@domain.com
+      - CMS_SMTP_PASSWORD=password
+      - CMS_SMTP_USE_TLS=YES
+      - CMS_SMTP_USE_STARTTLS=YES
+      - CMS_SMTP_REWRITE_DOMAIN=domain.com
+      - CMS_SMTP_HOSTNAME=domain.com
+      - CMS_SMTP_FROM_LINE_OVERRIDE=YES
+      - CMS_SMTP_FROM=email@domain.com
+    ports:
+      - "80:80"
+    mem_limit: 2g
+  xibo-memcached:
+    image: memcached:alpine
+    command: memcached -m 15
+    restart: always
+    mem_limit: 200M
+  xibo-quickchart:
+    image: ianw/quickchart
+    restart: always
