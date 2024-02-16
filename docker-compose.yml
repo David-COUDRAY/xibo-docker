@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  xibo-db:
+    image: mysql:8.0
+    volumes:
+      - "./shared/db:/var/lib/mysql:Z"
+    environment:
+      - MYSQL_DATABASE=xibo
+      - MYSQL_USER=xibo
+      - MYSQL_PASSWORD=Tyr{}]3P8G66pc
+      - MYSQL_ROOT_PASSWORD=8-#UG5sg+qh3D4
+    mem_limit: 2g
+    restart: always
+  xibo-pma:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - "85:80"
+    environment:
+      - MYSQL_ROOT_PASSWORD=8-#UG5sg+qh3D4
+      - PMA_HOST=xibo-db
+  xibo-xmr:
+    image: ghcr.io/xibosignage/xibo-xmr:0.11
+    ports:
+      - "9505:9505"
+    restart: always
+    mem_limit: 512m
+  xibo-web:
+    image: ghcr.io/xibosignage/xibo-cms:release-4.0.7
+    volumes:
+      - "./shared/cms/custom:/var/www/cms/custom:Z"
+      - "./shared/backup:/var/www/backup:Z"
+      - "./shared/cms/web/theme/custom:/var/www/cms/web/theme/custom:Z"
+      - "./shared/cms/library:/var/www/cms/library:Z"
+      - "./shared/cms/web/userscripts:/var/www/cms/web/userscripts:Z"
+      - "./shared/cms/ca-certs:/var/www/cms/ca-certs:Z"
+    restart: always
+    environment:
+      - CMS_USAGE_REPORT=false
+      - XMR_HOST=xibo-xmr
+      - CMS_USE_MEMCACHED=true
+      #- CMS_SERVER_NAME=xibo.domain.local
+      - MEMCACHED_HOST=xibo-memcached
+      - MEMCACHED_PORT=11211
+      - CMS_QUICK_CHART_URL=http://xibo-quickchart:3400
+      #- XTR_ENABLED=false
+      - MYSQL_HOST=xibo-db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=xibo
+      - MYSQL_USER=xibo
+      - MYSQL_PASSWORD=Tyr{}]3P8G66pc
+    ports:
+      - "80:80"
+    mem_limit: 2g
+  xibo-memcached:
+    image: memcached:alpine
+    command: memcached -m 15
+    restart: always
+    mem_limit: 200M
+  xibo-quickchart:
+    image: ianw/quickchart
+    restart: always
